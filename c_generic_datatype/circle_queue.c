@@ -1,4 +1,7 @@
-/* queue.c */
+/*
+generic circle queue in c
+winxos 2017/12/19
+*/
 #include "circle_queue.h"
 #include <stdlib.h>
 #include <string.h>
