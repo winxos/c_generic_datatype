@@ -4,12 +4,13 @@
 typedef struct {
 	int head;
 	int tail;
+	int count;
 	int struct_sz;
-	void* array[BUF_SZ];
+	void* array[BUF_SZ]; //pointer of data type
 }Queue;
 
-Queue *queue_create(int struct_sz);
-void queue_free(Queue *aqueue);
-int queue_push(Queue *aqueue, void *element);
-int queue_pop(Queue *aqueue, void *element);
+Queue *queue_create(int struct_sz); //size of data type
+void queue_free(Queue *q);
+int queue_push(Queue *q, void *element);
+int queue_pop(Queue *q, void *element);
 #endif
