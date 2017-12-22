@@ -2,12 +2,11 @@
 generic circle queue in c/embeded c
 winxos 2017/12/19
 */
-#include "circle_queue.h"
-#include <stdlib.h>
-#include <string.h>
-Queue *queue_create(int struct_sz)
+#include "share.h"
+
+CircleQueue *queue_create(int struct_sz)
 {
-	Queue *q = malloc(sizeof(Queue));
+	CircleQueue *q = malloc(sizeof(CircleQueue));
 	for (int i = 0;i < BUF_SZ;i++)
 	{
 		q->array[i] = calloc(1,struct_sz);
@@ -19,7 +18,7 @@ Queue *queue_create(int struct_sz)
 	return q;
 }
 
-void queue_free(Queue *q)
+void queue_free(CircleQueue *q)
 {
 	if (q != NULL) {
 		for (int i = 0;i < BUF_SZ;i++)
@@ -30,7 +29,7 @@ void queue_free(Queue *q)
 	free(q);
 }
 
-int queue_push(Queue *q, void *element)
+int queue_push(CircleQueue *q, void *element)
 {
 	memcpy(q->array[q->head], element, q->struct_sz);
 	q->head++;
@@ -45,7 +44,7 @@ int queue_push(Queue *q, void *element)
 	return 0;
 }
 
-int queue_pop(Queue *q, void *element)
+int queue_pop(CircleQueue *q, void *element)
 {
 	if (q->count <=0)
 	{
@@ -59,4 +58,8 @@ int queue_pop(Queue *q, void *element)
 	}
 	q->count--;
 	return 0;
+}
+void *queue_peek(CircleQueue *q, int index)
+{
+	return (void *)q->array[index];
 }

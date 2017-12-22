@@ -26,5 +26,14 @@
     <ClInclude Include="circle_queue.h">
       <Filter>源文件</Filter>
     </ClInclude>
+    <ClInclude Include="test_circle_queue.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="public.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="share.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

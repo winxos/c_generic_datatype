@@ -7,10 +7,11 @@ typedef struct {
 	int count;
 	int struct_sz;
 	void* array[BUF_SZ]; //pointer of data type
-}Queue;
+}CircleQueue;
 
-Queue *queue_create(int struct_sz); //size of data type
-void queue_free(Queue *q);
-int queue_push(Queue *q, void *element);
-int queue_pop(Queue *q, void *element);
+CircleQueue *queue_create(int struct_sz); //size of data type
+void queue_free(CircleQueue *q);
+int queue_push(CircleQueue *q, void *element);
+int queue_pop(CircleQueue *q, void *element);
+void *queue_peek(CircleQueue *q, int index);
 #endif
