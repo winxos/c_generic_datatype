@@ -111,13 +111,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="array_list.c" />
     <ClCompile Include="circle_queue.c" />
     <ClCompile Include="main.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="array_list.h" />
     <ClInclude Include="circle_queue.h" />
     <ClInclude Include="public.h" />
     <ClInclude Include="share.h" />
+    <ClInclude Include="test_array_list.h" />
     <ClInclude Include="test_circle_queue.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

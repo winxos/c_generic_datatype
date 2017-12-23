@@ -27,6 +27,6 @@ void test_cq(void)
 	S1 c;
 	S2 d = { 0,"" };
 	queue_pop(q1, &c);
-	c.action("hello world");
 	queue_pop(q2, &d);
+	c.action("hello world\n");
 }
