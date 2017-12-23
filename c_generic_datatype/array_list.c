@@ -8,7 +8,7 @@ struct List *list_create(int item_size,void (*item_delete)(void *), bool(*item_v
 {
 	u8 i;
 	struct List *list = malloc(sizeof(struct List));
-	list->data = malloc(MAX_LIST_COUNT * item_size);
+	list->data = calloc(MAX_LIST_COUNT , item_size);
 	list->count = 0;
 	list->item_delete = item_delete;
 	list->item_valid = item_valid;
