@@ -36,6 +36,7 @@ int queue_push(CircleQueue *q, void *element)
 	if (q->head >= BUF_SZ)
 	{
 		q->head = 0;
+		//error
 	}
 	if (q->count < BUF_SZ)
 	{
