@@ -1,5 +1,6 @@
 #pragma once
-#include "share.h"
+#include "array_list.h"
+#include "circle_queue.h"
 typedef struct {
 	int counter;
 	u8 msg;

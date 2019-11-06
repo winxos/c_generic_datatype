@@ -2,7 +2,7 @@
 generic circle queue in c/embeded c
 winxos 2017/12/19
 */
-#include "share.h"
+#include "circle_queue.h"
 
 CircleQueue *queue_create(int struct_sz)
 {
