@@ -1,48 +1,60 @@
-# C语言泛型数据结构实现
+# C语言抽象数据类型的实现
 
-> wvv 2017/12/23
+> modify:wvv 20191112
+>
+> create:wvv 20171223
 
 ### 前言
 
-在C语言中，由于没有默认泛型支持，所以在实现数据结构的时候通常会和具体承载内容挂钩。举例如下：
+在C语言中，由于没有默认泛型支持，在实现数据结构的时候通常会和具体承载内容挂钩。
 
-按常规数据结构书上教导，如果需要设计一个栈，那么栈内容类型是确定的，即使可以通过 **typedef**的技巧使得栈可以在不同场合装入不同内容，但是在同一工程下栈无法装载不同的数据类型，这样使得如果有几个不同数据类型的栈，就需要把栈代码再实现多份，这样非常不利于代码维护。
+例如：按常规数据结构书上描述来设计一个栈，那么栈里面放置的内容类型是确定的，比如是int，或者某种结构体类型。虽然我们可以通过 **typedef**的技巧对栈实际类型进行替换，使得栈可以在不同场合装入不同内容，但是在同一工程下栈无法装载不同的数据类型，这样使得如果有几个不同数据类型的栈，就需要把栈代码再实现多份，这样就实际上没有实现栈这个抽象数据类型本身的抽象目的。
 
-在C语言中，何如高效复用基础数据结构便需要很多技巧，网上这方面教程非常少，本文起到一个补充作用。
+要实现一个通用类型的抽象数据结构库，需要考虑几个问题：
 
-本文提供两种技巧供大家参考。
+1. 多种数据的支持性
+2. 接口的合理性
+3. 跨平台支持性
+4. 特殊使用环境考虑，例如MISRA标准规定嵌入式上一般不能用动态内存分配。
+5. 等
 
-### void* （空指针）方法
+因为C语言语法简单，不像C++等高级语言自身拥有很多特性容易实现真正的抽象数据类型，所以想要非常好的实现抽象数据类型，需要很多的技巧性，对于刚学会c大学课堂上那些知识来说的朋友可能无从下手，网上这方面教程非常少，本文抛砖引玉，给初学者一些启迪。
 
-该技巧利用C语言中空指针无数据类型，可以进行强制转换的特点来实现。
+### 抽象的实现：void* （空指针）转换法
+
+该技巧利用C语言中空指针无数据类型，可以进行强制转换的特点来实现任意数据类型的抽象。
 
 以结构体数组循环队列为例，声明如下：
 
 ```c
 typedef struct {
-	int head;
-	int tail;
-	int count;
-	int struct_sz;
-	void* array[BUF_SZ]; //pointer of data type
+	uint32_t head;
+	uint32_t tail;
+	uint32_t count; /*real item counts*/
+	uint32_t size;	/*queue max size*/
+    uint32_t item_size; /*item each size in bytes*/
+	uint8_t * buf; /*storage place*/
 }CircleQueue;
+CircleQueue *queue_create(uint32_t item_size, uint32_t size);
+bool queue_push(CircleQueue *q, void *element);
+bool queue_pop(CircleQueue *q, void *element);
+bool queue_peek(CircleQueue *q, void *element);
+/*注：uint32_t 表示32位无符号类型*/
+/*注：uint8_t 表示8位无符号类型*/
 ```
 
-我们在array中存储需要载入的数据结构体指针，在初始化时，我们需要传入后期结构体所占内存数，用于动态内存分配。
+核心思想：
 
-因为我们要实现通用抽象数据结构，而数据单元是由使用者确定的，所以内存占用各不相同，所以传入数据单元长度是必不可少的参数。
+将任意数据类型都通过void* 指针转换为uint8_t类型进行内部存储，因为计算机内部最小存储单位为uint8_t，对于抽象数据结构而言，任何类型本指上是一定字节数量的一块内存区域，所以不同的数据类型都抽象成为不同个数的uint8_t类型的操作，只是对于不同宽度数据每次计算偏移量不一样而已。这样就实现了任意类型的抽象。
 
-这样相当于我们抽象数据类型中存放的都是实际元素的指针。原理清楚了，实现起来就是常规思路了。
+队列具体实现过程：
 
-以循环队列为例，常规的声明文件应该如下：
+- `通过queue_create创建队列，传入单个对象所占内存数、队列最大容量，系统内部动态分配大小为item_size*size内存给buf，返回创建的队列指针。`
+- `push操作时，通过void*类型将任意类型数据传入，系统内部可以根据count以及item_size值计算出对象在buf中的实际存储位置，然后进行赋值传入。`
+- `pop操作时，系统内部可以根据count以及item_size值计算出所需对象在buf中的实际存储位置，然后通过void*类型进行赋值导出。`
 
-```c
-CircleQueue *queue_create(int struct_sz); //size of data type
-void queue_free(CircleQueue *q);
-int queue_push(CircleQueue *q, void *element);
-int queue_pop(CircleQueue *q, void *element);
-void *queue_peek(CircleQueue *q, int index);
-```
+- 其他操作类似。
+
 
 参考调用方式如下：
 
@@ -55,136 +67,98 @@ typedef struct {
 	int a;
 	char b[15];
 }S2;
-void f(char *s)
-{
-	printf(s);
-}
 void test_cq(void)
 {
-	static CircleQueue *q1, *q2;
 	Sd a = { 1,f };
 	S2 b = { 1,"hhggggggh" };
-	q1 = queue_create(sizeof(Sd));
-	q2 = queue_create(sizeof(S2));
+	CircleQueue *q1 = queue_create(sizeof(Sd),10);/*创建最大容量为10的Sd类型队列*/
+	CircleQueue *q2 = queue_create(sizeof(S2),5);/*创建最大容量为5的S2类型队列*/
 	queue_push(q1, (void*)&a);
 	queue_push(q2, (void*)&b);
+    queue_pop(q1,&a);
 }
 ```
 
-注意的是结构体指针转成void* 指针需要进行强制转换。
+注意的是结构体指针转成void* 指针需要进行强制转换，不然会有警告。
 
-### 手动内存映射法
+### 不使用动态内存分配的实现方式
 
-采用空指针法也存在一些弊端，例如：
+动态内存分配涉及到内存管理，分配，销毁等，如果操作不当，很容易造成内存泄漏，内存碎片过多等，是造成BUG的重要成因，所以在安全性高的一些嵌入式场合，嵌入式领域MISRA标准是不允许使用动态内存分配的，整个系统必须要在初始化完成后内存分配就完全确定，不能再发生变化。
 
-1. 因为每个元素是动态分配的，使得元素间实际内存地址可能不连续，不便于优化。
-2. 删除增加元素要动态分配内存，在嵌入式设备上，频繁动态分配很影响性能。
+具体应该如何实现全静态分配的抽象数据结构呢？
 
-在内存资源少的嵌入式设备上，最好手动的规划好内存的分配，所以相对在数组中存储数据指针，不如直接将数据内容直接存放在一起。
+我们只需要做一点改变，数据结构以前防数据的buf区改为一个指针，指向用户自己在外部分配好内存区域，其他不变。
 
-将数据连续存放在一起后，也存在一个问题，如何删除元素和增加元素？采用空指针的时候，可以将指针悬空来删除，但是手动管理数据后如何删除呢？
-
-解决办法是，我们可以将数据有效性问题丢给使用者来确定，由用户自定义函数来确定数据有效性，在初始化的时候利用函数指针进行用户自定义函数动态绑定。
-
-以结构体列表为例：
-
-声明如下：
-
-```c
-#pragma pack(1)
-struct Stack{
-	u8 item_size;
-	u8 count;
-	bool(*item_valid)(void *item);
-	void(*item_delete)(void *item);
-	u8* data; //pointer of data type
-};
-#pragma pack() 
-struct Stack *list_create(int item_size, void(*item_delete)(void *),bool (*item_valid)(void*));
-bool list_add(struct Stack *l, void *item);
-bool list_del(struct Stack *l, u8 index);
-void *list_get(struct Stack *l, u8 index);
-```
-
-嵌入式中，内存最好做到字节必争，一般采用平台无关 u8 之类自定义基本数据类型。
-
-其中初始化时传入的函数指针**item_delete** 来使指定数据失效，**item_valid**来确定数据是否失效。这样就能实现数据的完全抽象。
-
-具体实现参考如下：
+下面我们以一个具体栈为例，进行说明：
 
 ``` c
-static inline void* get_item_addr(struct Stack *l, u8 index)
+struct Stack{
+    u32 max_length;
+	u32 item_size;
+    u32 count; /*real items count*/
+	u8* data; /*pointer to the real external address*/
+};
+void list_init(struct Stack *list, u32 max_length, u32 item_size, void * buf)
 {
-	return l->data + index*l->item_size;
+    list->max_length=max_length;
+    list->count=0;
+    list->data=buf;
+    list->item_size=item_size;
 }
-struct Stack *list_create(int item_size,void (*item_delete)(void *), bool(*item_valid)(void *))
-{
-	u8 i;
-	struct Stack *list = malloc(sizeof(struct Stack));
-	list->data = malloc(MAX_LIST_COUNT * item_size);
-	list->count = 0;
-	list->item_delete = item_delete;
-	list->item_valid = item_valid;
-	list->item_size = item_size;
-	for (i = 0;i < MAX_LIST_COUNT;i++)
-	{
-		item_delete(get_item_addr(list, i));
-	}
-	return list;
-}
-
-bool list_add(struct Stack *l, void *item)
-{
-	u8 i;
-	for (i = 0;i < MAX_LIST_COUNT;i++)
-	{
-		if (!l->item_valid(get_item_addr(l,i)))
-		{
-			memcpy((void*)get_item_addr(l,i),item, l->item_size);
-			return TRUE;
-		}
-	}
-	return FALSE;
-}
-bool list_del(struct Stack *l, u8 index)
-{
-	l->item_delete(get_item_addr(l, index));
-	return TRUE;
-}
-void *list_get(struct Stack *l, u8 index)
-{
-	return get_item_addr(l, index);
-}
-
 ```
 
-调用的时候，参考如下:
+我们通过list_init 完成stack的初始化，使用的时候我们声明空的Stack，然后作为第一参数传入list_init 中，同时传入栈最大容量，对象的大小，以及对象所在的缓存就完成了初始化。
 
 ```c
-typedef struct {
-	int counter;
-	u8 msg;
-}De;
-bool item_valid(De *d)
+typedef struct{
+    char s[10];
+    int a;
+}Item;
+int test()
 {
-	return d->msg != 0xff;
-}
-void item_delete(De *d)
-{
-	d->msg = 0xff;
-}
-void test_list()
-{
-	printf("%d\n", sizeof(struct Stack));
-	printf("%d\n", sizeof(u8));
-	struct Stack *ll = list_create(sizeof(De), item_delete, item_valid);
-	De d1 = { 1,1 }, d2 = { 2,2 };
-	list_add(ll, (void*)&d1);
-	list_add(ll, (void*)&d2);
-	list_del(ll, 0);
+    const int list_len=10; /*max size*/
+    Item buf[list_len]; /*buffer*/
+    struct Stack stack;
+    list_init(&stack, list_len, sizeof(Item), buf); /*init*/
 }
 ```
 
-这样就避免了频繁的内存动态分配。
+上面的代码演示了初始化的过程，其他操作与前一章节类似。
 
-上面的两个技巧仅供参考，代码也不完整，只在提供思路，希望对大家有帮助。
+至此我们就实现了完全的**抽象数据类型**以及**全静态内存抽象数据类型**。
+
+### 抽象数据操作接口的统一
+
+对于一个抽象数据结构来说，对应的会有一系列的操作方法（函数），但是用户层不一定知道确切的函数名称，这样用户必须对照着头文件来进行调用，更科学的办法是我们将需要提供给用户的操作集中定义在一个结构体里面，这有点像高级语言中的接口定义，用户通过统一的接口进行调用，这样要方便一些，以Stack为例，接口声明如下:
+
+```c
+typedef struct{
+    void (*init)(struct Stack *list, u32 max_length, u32 item_size, void * buf);
+    bool (*push)(struct Stack *list, void *item);
+    bool (*pop)(struct Stack *list, void *item);
+    bool (*peek)(struct Stack *list, void *item);
+    void (*clear)(struct Stack *list);
+    u32 (*size)(struct Stack *list);
+}StackOps;
+extern StackOps stack_ops;
+```
+
+用户通过stack_ops来进行统一调用，调用过程如下：
+
+```c
+struct Stack stack;
+Item i1={"stack",3};
+Item i2={"nice",10};
+const int list_len=10;
+Item buf[list_len];
+stack_ops.init(&stack, list_len, sizeof(Item), buf);
+stack_ops.push(&stack, &i1);
+stack_ops.push(&stack, &i2);
+```
+
+具体请参阅完整代码。
+
+### 项目开发环境
+
+本项目 [c_generic_datatype](https://github.com/winxos/c_generic_datatype/tree/master/c_generic_datatype)  文件夹内有一个完整的代码实现，包含了环形队列以及栈的实现，还有他们对应的自动测试例程，整个项目采用CLion IDE进行开发，安装好clion后，自己配置好c开发环境，clone下来后可以直接运行。
+
