@@ -41,7 +41,7 @@
     <ClInclude Include="array_list.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="test_array_list.h">
+    <ClInclude Include="test_list.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

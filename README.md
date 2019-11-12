@@ -50,7 +50,7 @@ void *queue_peek(CircleQueue *q, int index);
 typedef struct {
 	int a;
 	void(*action)(char* param);
-}S1;
+}Sd;
 typedef struct {
 	int a;
 	char b[15];
@@ -62,9 +62,9 @@ void f(char *s)
 void test_cq(void)
 {
 	static CircleQueue *q1, *q2;
-	S1 a = { 1,f };
+	Sd a = { 1,f };
 	S2 b = { 1,"hhggggggh" };
-	q1 = queue_create(sizeof(S1));
+	q1 = queue_create(sizeof(Sd));
 	q2 = queue_create(sizeof(S2));
 	queue_push(q1, (void*)&a);
 	queue_push(q2, (void*)&b);
@@ -92,7 +92,7 @@ void test_cq(void)
 
 ```c
 #pragma pack(1)
-struct List{
+struct Stack{
 	u8 item_size;
 	u8 count;
 	bool(*item_valid)(void *item);
@@ -100,10 +100,10 @@ struct List{
 	u8* data; //pointer of data type
 };
 #pragma pack() 
-struct List *list_create(int item_size, void(*item_delete)(void *),bool (*item_valid)(void*));
-bool list_add(struct List *l, void *item);
-bool list_del(struct List *l, u8 index);
-void *list_get(struct List *l, u8 index);
+struct Stack *list_create(int item_size, void(*item_delete)(void *),bool (*item_valid)(void*));
+bool list_add(struct Stack *l, void *item);
+bool list_del(struct Stack *l, u8 index);
+void *list_get(struct Stack *l, u8 index);
 ```
 
 嵌入式中，内存最好做到字节必争，一般采用平台无关 u8 之类自定义基本数据类型。
@@ -113,14 +113,14 @@ void *list_get(struct List *l, u8 index);
 具体实现参考如下：
 
 ``` c
-static inline void* get_item_addr(struct List *l, u8 index)
+static inline void* get_item_addr(struct Stack *l, u8 index)
 {
 	return l->data + index*l->item_size;
 }
-struct List *list_create(int item_size,void (*item_delete)(void *), bool(*item_valid)(void *))
+struct Stack *list_create(int item_size,void (*item_delete)(void *), bool(*item_valid)(void *))
 {
 	u8 i;
-	struct List *list = malloc(sizeof(struct List));
+	struct Stack *list = malloc(sizeof(struct Stack));
 	list->data = malloc(MAX_LIST_COUNT * item_size);
 	list->count = 0;
 	list->item_delete = item_delete;
@@ -133,7 +133,7 @@ struct List *list_create(int item_size,void (*item_delete)(void *), bool(*item_v
 	return list;
 }
 
-bool list_add(struct List *l, void *item)
+bool list_add(struct Stack *l, void *item)
 {
 	u8 i;
 	for (i = 0;i < MAX_LIST_COUNT;i++)
@@ -146,12 +146,12 @@ bool list_add(struct List *l, void *item)
 	}
 	return FALSE;
 }
-bool list_del(struct List *l, u8 index)
+bool list_del(struct Stack *l, u8 index)
 {
 	l->item_delete(get_item_addr(l, index));
 	return TRUE;
 }
-void *list_get(struct List *l, u8 index)
+void *list_get(struct Stack *l, u8 index)
 {
 	return get_item_addr(l, index);
 }
@@ -173,11 +173,11 @@ void item_delete(De *d)
 {
 	d->msg = 0xff;
 }
-void test_array_list()
+void test_list()
 {
-	printf("%d\n", sizeof(struct List));
+	printf("%d\n", sizeof(struct Stack));
 	printf("%d\n", sizeof(u8));
-	struct List *ll = list_create(sizeof(De), item_delete, item_valid);
+	struct Stack *ll = list_create(sizeof(De), item_delete, item_valid);
 	De d1 = { 1,1 }, d2 = { 2,2 };
 	list_add(ll, (void*)&d1);
 	list_add(ll, (void*)&d2);

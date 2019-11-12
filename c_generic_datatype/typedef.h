@@ -7,7 +7,11 @@ typedef unsigned char u8;
 typedef unsigned short u16;
 typedef unsigned long u32;
 
-typedef u8 bool;
-
+#ifndef bool
+typedef u8 				bool;
+#endif
+#ifndef NULL
+#define NULL 	(0)
+#endif
 #define TRUE 1
 #define FALSE 0
